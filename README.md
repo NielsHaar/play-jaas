@@ -1,7 +1,7 @@
 play-jaas
 =========
 
-This is an authentication module for Play 2.2.2 framework which performs the authentication via JAAS.
+This is an authentication module for Play 2.3.3 framework which performs the authentication via JAAS.
 Note that this will protect the controllers and not the resources in the /public directory. 
 
 Dependencies and 3rd Party Libraries
@@ -10,17 +10,24 @@ The project contains a number of authentication modules.
 Depending on which module you want you may depend on additional 3rd party libraries. The following is a 
 list of libraries needed to compile the code.
 
-- Play 2.2.2
-- OpenSAML Stack (in /lib directory):
-    - opensaml-2.5.3.jar
-    - openws-1.4.4.jar
-    - xmltooling-1.3.4.jar
+- Play 2.3.3
+- OpenSAML Stack is now an SBT-Dependency
  
  Note that when using the federated authentication module (SAML2) there are additional libraries required at runtime.
  
  Usage
  -----
- - add the play-jaas library as dependency to your project. (ie. copy the jar to lib/ folder of your Play project)
+ - add the play-jaas library as a subproject.
+   ```
+   // Add the project from play-jaas' build.sbt as a reference
+   lazy val playJaasProject = ProjectRef(id = "playJaas", base = file("modules/play-jaas"))
+   
+   // Make your current project dependent on it
+   lazy val root = (project in file("."))
+     .enablePlugins(PlayJava)
+     .aggregate(playJaasFile)
+     .dependsOn(playJaasFile)
+   ```
  
  - Annotate the controllers you want to protect with:
  @Security.Authenticated(Secured.class)
