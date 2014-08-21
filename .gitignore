@@ -9,3 +9,5 @@ dist
 .settings
 .idea
 .idea_modules
+/*.iml
+/atlassian-ide-plugin.xml
