@@ -18,16 +18,17 @@ list of libraries needed to compile the code.
  Usage
  -----
  - add the play-jaas library as a subproject.
-   ```
-   // Add the project from play-jaas' build.sbt as a reference
-   lazy val playJaasProject = ProjectRef(id = "playJaas", base = file("modules/play-jaas"))
+ 
+```
+  // Add the project from play-jaas' build.sbt as a reference
+  lazy val playJaasProject = ProjectRef(id = "playJaas", base = file("modules/play-jaas"))
    
-   // Make your current project dependent on it
-   lazy val root = (project in file("."))
-     .enablePlugins(PlayJava)
-     .aggregate(playJaasFile)
-     .dependsOn(playJaasFile)
-   ```
+  // Make your current project dependent on it
+  lazy val root = (project in file("."))
+    .enablePlugins(PlayJava)
+    .aggregate(playJaasFile)
+    .dependsOn(playJaasFile)
+ ```
  
  - Annotate the controllers you want to protect with:
  @Security.Authenticated(Secured.class)
