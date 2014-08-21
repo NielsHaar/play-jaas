@@ -45,6 +45,8 @@ public class Configuration {
     public static final String   RESPONSE_TYPE_JSON     = "json";
     public static final String   RESPONSE_TYPE_REDIRECT = "redirect";
 
+    public static final long     MAX_TIMEOUT            = 10000l;
+
     // constants for built-in auth modules
     public static final String   HANDLER_NO_AUTH        = "noAuthHandler";
     public static final String   HANDLER_USER_PWD_STUB  = StubAuthModule.class.getName();

@@ -3,11 +3,13 @@ package auth.impl.callbacks;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import auth.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import play.libs.F.Function;
-import play.libs.WS;
+import play.libs.ws.WS;
+import play.libs.ws.WSResponse;
 import play.mvc.Http;
 import play.mvc.Http.Cookie;
 
@@ -19,7 +21,7 @@ public class OpenAMAttributesCallback extends HeadlessCallback {
     private HashMap<String,String> attrs = new HashMap<String,String>();
 
     /**
-     * @param req2
+     * @param openAmUrl
      * @param lst
      */
     public OpenAMAttributesCallback(String openAmUrl, ArrayList<String> lst) {
@@ -42,12 +44,12 @@ public class OpenAMAttributesCallback extends HeadlessCallback {
         //logger.debug(openAMUrl + "/identity/attributes");
         String result = WS.url(openAMUrl + "/identity/attributes")
                 .setQueryParameter("subjectid", java.net.URLEncoder.encode(token))
-                .get().map(new Function<WS.Response, String>() {
+                .get().map(new Function<WSResponse, String>() {
                     @Override
-                    public String apply(WS.Response response) {
+                    public String apply(WSResponse response) {
                         return response.getBody();
                     }
-                }).get();
+                }).get(Configuration.MAX_TIMEOUT);
         //logger.debug(result);
         String nm = "userdetails.attribute.name=";
         String val = "userdetails.attribute.value=";
