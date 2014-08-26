@@ -66,6 +66,7 @@ public abstract class AbstractAuthModule implements IAuthModule {
             ObjectNode result = Json.newObject();
             result.put("authResult", "fail");
             result.put("errors", Messages.get("invalid_credentials"));
+            result.put("redirect", Configuration.getInstance().urlAuthFailed);
             // or you can try: ok(string).as("application/json")
             return Controller.ok(result);
         } else if (respType == Configuration.RESPONSE_TYPE_REDIRECT) {

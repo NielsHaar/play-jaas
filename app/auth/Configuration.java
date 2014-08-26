@@ -41,7 +41,7 @@ import auth.impl.StubAuthModule;
  * </pre>
  */
 public class Configuration {
-
+    // Static methods
     public static final String   RESPONSE_TYPE_JSON     = "json";
     public static final String   RESPONSE_TYPE_REDIRECT = "redirect";
 
@@ -63,17 +63,6 @@ public class Configuration {
 
     // some default values
     private static Configuration instance;
-    public String                authnHandler           = HANDLER_USER_PWD_STUB;
-    public String                authFailedResponseType = RESPONSE_TYPE_JSON;
-    public String                urlLogout              = "/";
-    public String                urlAuthSucceeded       = "/";
-    public String                urlAuthFailed          = "/";
-    public boolean               followOriginalUri      = true;
-    public String                authnMethod            = AUTH_METHOD_ACTIVE;
-    public boolean               ssoLogout              = false; // if true, the logout will invoke logout on Idp
-
-    private Configuration() {
-    }
 
     public static Configuration getInstance() {
         if (instance == null) {
@@ -85,5 +74,51 @@ public class Configuration {
         }
         return instance;
     }
+
+    // Object methods
+    public String                authnHandler           = HANDLER_SAML2;
+    public String                authFailedResponseType = RESPONSE_TYPE_JSON;
+    public String                urlLogout              = "/";
+    public String                urlAuthSucceeded       = "/";
+    public String                urlAuthFailed          = "/";
+    public boolean               followOriginalUri      = true;
+    public String                authnMethod            = AUTH_METHOD_ACTIVE;
+    public boolean               ssoLogout              = true; // if true, the logout will invoke logout on Idp
+
+    private Configuration() {
+    }
+
+    public String getAuthnHandler() {
+        return authnHandler;
+    }
+
+    public String getAuthFailedResponseType() {
+        return authFailedResponseType;
+    }
+
+    public String getUrlLogout() {
+        return urlLogout;
+    }
+
+    public String getUrlAuthSucceeded() {
+        return urlAuthSucceeded;
+    }
+
+    public String getUrlAuthFailed() {
+        return urlAuthFailed;
+    }
+
+    public boolean isFollowOriginalUri() {
+        return followOriginalUri;
+    }
+
+    public String getAuthnMethod() {
+        return authnMethod;
+    }
+
+    public boolean isSsoLogout() {
+        return ssoLogout;
+    }
+
 
 }

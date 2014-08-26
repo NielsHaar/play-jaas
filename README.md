@@ -17,6 +17,7 @@ list of libraries needed to compile the code.
  
  Usage
  -----
+ 
  - add the play-jaas library as a subproject.
  
 ```

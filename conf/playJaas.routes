@@ -1,0 +1,4 @@
+# POST    /login                  auth.controllers.Authentication.login()
+GET         /auth/logout                   auth.controllers.Authentication.logout()
+POST        /auth/samlAuthnResponse        auth.controllers.Authentication.samlAuthnResponse()
+GET         /auth/metadata                 auth.controllers.Authentication.samlMetadata()

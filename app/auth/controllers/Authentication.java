@@ -1,9 +1,11 @@
 package auth.controllers;
 
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
+import auth.utils.SAMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +49,7 @@ public class Authentication extends Controller {
             lc.login();
             return auth.onAuthSucceeded(lc.getSubject());
         } catch (LoginException e) {
+            e.printStackTrace();
             return auth.onAuthFailed(e);
         } catch (SecurityException e) {
             return auth.onAuthFailed(e);
@@ -78,6 +81,29 @@ public class Authentication extends Controller {
     public static Result samlAuthnResponse() {
         logger.debug("samlAuthnResponse()");
         return login(ctx());
+    }
+
+    public static Result samlMetadata() {
+        if(!Configuration.HANDLER_SAML2.equals(Configuration.getInstance().authnHandler)) {
+            return notFound();
+        }
+
+        logger.debug("samlMetadata()");
+        SAMLUtils samlUtils = SAMLUtils.getInstance();
+
+        AppConfigurationEntry[] federatedAuths = javax.security.auth.login.Configuration.getConfiguration().getAppConfigurationEntry("FederatedAuth");
+        if(federatedAuths.length == 0) {
+            return internalServerError();
+        }
+        AppConfigurationEntry federatedAuth = federatedAuths[0];
+        samlUtils.setAssertionConsumerServiceUrl(federatedAuth.getOptions().get(SAMLUtils.ATTR_CONSUMER_URL).toString());
+        samlUtils.setSamlIssuerUrl(federatedAuth.getOptions().get(SAMLUtils.ATTR_ISSUER).toString());
+
+        String metadata = samlUtils.buildSAMLMetadata();
+        if(metadata == null)
+            return internalServerError();
+
+        return ok(metadata).as("application/xml");
     }
 
 }

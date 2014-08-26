@@ -43,6 +43,10 @@ import org.opensaml.saml2.core.Response;
 import org.opensaml.saml2.core.StatusCode;
 import org.opensaml.saml2.core.Subject;
 import org.opensaml.saml2.encryption.Decrypter;
+import org.opensaml.saml2.metadata.AssertionConsumerService;
+import org.opensaml.saml2.metadata.EntityDescriptor;
+import org.opensaml.saml2.metadata.NameIDFormat;
+import org.opensaml.saml2.metadata.SPSSODescriptor;
 import org.opensaml.ws.soap.common.SOAPObjectBuilder;
 import org.opensaml.ws.soap.soap11.Body;
 import org.opensaml.ws.soap.soap11.Envelope;
@@ -73,6 +77,17 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.namespace.QName;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 public class SAMLUtils {
 
     private static Logger logger = LoggerFactory.getLogger(SAMLUtils.class);
@@ -86,6 +101,7 @@ public class SAMLUtils {
     private String samlIssuerUrl;
     private String idpSoapUrl;
     private String samlUsername;
+    private String assertionConsumerServiceUrl;
     private boolean debug;
 
     public static final String      ATTR_DER_FILE     = "derFile";
@@ -93,6 +109,7 @@ public class SAMLUtils {
     public static final String      ATTR_ISSUER       = "samlIssuerUrl";
     public static final String      ATTR_IDP_SOAP_URL = "idpSoapUrl";
     public static final String      ATTR_USERNAME     = "samlUsername";
+    public static final String      ATTR_CONSUMER_URL = "assertionConsumerServiceUrl";
 
     private SAMLUtils() {
     }
@@ -137,6 +154,10 @@ public class SAMLUtils {
 
     public void setSamlUsername(String usernm) {
         this.samlUsername = usernm;
+    }
+
+    public void setAssertionConsumerServiceUrl(String assertionConsumerServiceUrl) {
+        this.assertionConsumerServiceUrl = assertionConsumerServiceUrl;
     }
 
     /**
@@ -513,6 +534,128 @@ public class SAMLUtils {
         }
         logAttributes(attrs);
         return attributes;
+    }
+
+    public static <T> T buildSAMLObjectWithDefaultName(final Class<T> clazz) {
+        XMLObjectBuilderFactory builderFactory = Configuration.getBuilderFactory();
+
+        QName defaultElementName = null;
+        try {
+            defaultElementName = (QName)clazz.getDeclaredField("DEFAULT_ELEMENT_NAME").get(null);
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+            return null;
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+            return null;
+        }
+        T object = (T)builderFactory.getBuilder(defaultElementName).buildObject(defaultElementName);
+
+        return object;
+    }
+
+    public String buildSAMLMetadata() {
+        EntityDescriptor spEntityDescriptor = SAMLUtils.buildSAMLObjectWithDefaultName(EntityDescriptor.class);
+        spEntityDescriptor.setEntityID(samlIssuerUrl);
+        SPSSODescriptor spSSODescriptor = SAMLUtils.buildSAMLObjectWithDefaultName(SPSSODescriptor.class);
+        // Ignore signing for now!
+        /**
+        spSSODescriptor.setWantAssertionsSigned(true); spSSODescriptor.setAuthnRequestsSigned(true);
+         X509KeyInfoGeneratorFactory keyInfoGeneratorFactory = new X509KeyInfoGeneratorFactory();
+         keyInfoGeneratorFactory.setEmitEntityCertificate(true);
+         KeyInfoGenerator keyInfoGenerator = keyInfoGeneratorFactory.newInstance();
+
+
+         KeyDescriptor encKeyDescriptor = SAMLUtil.buildSAMLObjectWithDefaultName(KeyDescriptor.class);
+
+         encKeyDescriptor.setUse(UsageType.ENCRYPTION); //Set usage
+
+         // Generating key info. The element will contain the public key. The key is used to by the IDP to encrypt data
+         try {
+         encKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(X509Credential));
+         } catch (SecurityException e) {
+         log.error(e.getMessage(), e);
+         }
+
+         spSSODescriptor.getKeyDescriptors().add(encKeyDescriptor);
+
+         KeyDescriptor signKeyDescriptor = SAMLUtil.buildSAMLObjectWithDefaultName(KeyDescriptor.class);
+
+         signKeyDescriptor.setUse(UsageType.SIGNING);  //Set usage
+
+         // Generating key info. The element will contain the public key. The key is used to by the IDP to verify signatures
+         try {
+         signKeyDescriptor.setKeyInfo(keyInfoGenerator.generate(X509Credential));
+         } catch (SecurityException e) {
+         log.error(e.getMessage(), e);
+         }
+
+         spSSODescriptor.getKeyDescriptors().add(signKeyDescriptor);
+         */
+
+        /// Setting what type of pseudonym federation we want with the IDP.
+        // Request transient pseudonym
+        NameIDFormat nameIDFormat = SAMLUtils.buildSAMLObjectWithDefaultName(NameIDFormat.class);
+        nameIDFormat.setFormat("urn:oasis:names:tc:SAML:2.0:nameid-format:transient");
+        spSSODescriptor.getNameIDFormats().add(nameIDFormat);
+
+        /// Setting location of services
+        AssertionConsumerService assertionConsumerService = SAMLUtils.buildSAMLObjectWithDefaultName(AssertionConsumerService.class);
+        assertionConsumerService.setIndex(0);
+        assertionConsumerService.setBinding(SAMLConstants.SAML2_ARTIFACT_BINDING_URI);
+
+        // Setting address for our AssertionConsumerService
+        assertionConsumerService.setLocation(assertionConsumerServiceUrl);
+        spSSODescriptor.getAssertionConsumerServices().add(assertionConsumerService);
+
+        // And finally we set SAML as supported protocol and generate the XML
+        spSSODescriptor.addSupportedProtocol(SAMLConstants.SAML20P_NS);
+
+        spEntityDescriptor.getRoleDescriptors().add(spSSODescriptor);
+
+        DocumentBuilder builder;
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+        try {
+            builder = factory.newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            e.printStackTrace();
+            return null;
+        }
+        Document document = builder.newDocument();
+        Marshaller out = Configuration.getMarshallerFactory().getMarshaller(spEntityDescriptor);
+        try {
+            out.marshall(spEntityDescriptor, document);
+        } catch (MarshallingException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        Transformer transformer = null;
+        try {
+            transformer = TransformerFactory.newInstance().newTransformer();
+        } catch (TransformerConfigurationException e) {
+            e.printStackTrace();
+            return null;
+        }
+        StringWriter stringWriter = new StringWriter();
+        StreamResult streamResult = new StreamResult(stringWriter);
+        DOMSource source = new DOMSource(document);
+        try {
+            transformer.transform(source, streamResult);
+        } catch (TransformerException e) {
+            e.printStackTrace();
+            return null;
+        }
+        try {
+            stringWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        String metadataXML = stringWriter.toString();
+
+        return metadataXML;
     }
 
     /**
